@@ -11,6 +11,7 @@ import net.objecthunter.exp4j.ExpressionBuilder;
 public class MainActivity extends AppCompatActivity {
 
     private TextView tvExpression, tvResult;
+    private boolean isResultDisplayed = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +42,10 @@ public class MainActivity extends AppCompatActivity {
 
         View.OnClickListener listener = v -> {
             Button b = (Button) v;
+            if (isResultDisplayed) {
+                tvExpression.setText("");
+                isResultDisplayed = false;
+            }
             tvExpression.append(b.getText().toString());
         };
 
@@ -56,19 +61,24 @@ public class MainActivity extends AppCompatActivity {
         button9.setOnClickListener(listener);
         buttonDot.setOnClickListener(listener);
 
-        buttonAdd.setOnClickListener(v -> tvExpression.append("+"));
-        buttonSubtract.setOnClickListener(v -> tvExpression.append("-"));
-        buttonMultiply.setOnClickListener(v -> tvExpression.append("*"));
-        buttonDivide.setOnClickListener(v -> tvExpression.append("/"));
+        buttonAdd.setOnClickListener(v -> appendOperator("+"));
+        buttonSubtract.setOnClickListener(v -> appendOperator("-"));
+        buttonMultiply.setOnClickListener(v -> appendOperator("*"));
+        buttonDivide.setOnClickListener(v -> appendOperator("/"));
 
         buttonEquals.setOnClickListener(v -> {
             String expression = tvExpression.getText().toString();
+            if (expression.isEmpty()) {
+                return;
+            }
             try {
                 Expression e = new ExpressionBuilder(expression).build();
                 double result = e.evaluate();
                 tvResult.setText(String.valueOf(result));
+                isResultDisplayed = true;
             } catch (Exception ex) {
                 tvResult.setText("Error");
+                isResultDisplayed = true;
             }
         });
 
@@ -80,11 +90,17 @@ public class MainActivity extends AppCompatActivity {
         });
 
         buttonClear.setOnClickListener(v -> {
-            String text = tvExpression.getText().toString();
-            if (!text.isEmpty()) {
-                tvExpression.setText(null);
-                tvResult.setText(null);
-            }
+            tvExpression.setText("");
+            tvResult.setText("");
+            isResultDisplayed = false;
         });
+    }
+
+    private void appendOperator(String operator) {
+        if (isResultDisplayed) {
+            tvExpression.setText(tvResult.getText().toString());
+            isResultDisplayed = false;
+        }
+        tvExpression.append(operator);
     }
 }
