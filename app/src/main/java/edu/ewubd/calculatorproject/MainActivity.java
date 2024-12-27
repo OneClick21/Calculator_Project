@@ -4,19 +4,22 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-
 import androidx.appcompat.app.AppCompatActivity;
+import net.objecthunter.exp4j.Expression;
+import net.objecthunter.exp4j.ExpressionBuilder;
 
 public class MainActivity extends AppCompatActivity {
 
-    private TextView textView;
+    private TextView tvExpression, tvResult;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        textView = findViewById(R.id.editText);
+        tvExpression = findViewById(R.id.tvExpression);
+        tvResult = findViewById(R.id.tvResult);
+
         Button button0 = findViewById(R.id.btn0);
         Button button1 = findViewById(R.id.btn1);
         Button button2 = findViewById(R.id.btn2);
@@ -34,10 +37,11 @@ public class MainActivity extends AppCompatActivity {
         Button buttonEquals = findViewById(R.id.btnEqual);
         Button buttonDot = findViewById(R.id.btnDot);
         Button buttonDelete = findViewById(R.id.btnDelete);
+        Button buttonClear = findViewById(R.id.btnClear);
 
         View.OnClickListener listener = v -> {
             Button b = (Button) v;
-            textView.append(b.getText().toString());
+            tvExpression.append(b.getText().toString());
         };
 
         button0.setOnClickListener(listener);
@@ -52,89 +56,35 @@ public class MainActivity extends AppCompatActivity {
         button9.setOnClickListener(listener);
         buttonDot.setOnClickListener(listener);
 
-        buttonAdd.setOnClickListener(v -> textView.append("+"));
-        buttonSubtract.setOnClickListener(v -> textView.append("-"));
-        buttonMultiply.setOnClickListener(v -> textView.append("*"));
-        buttonDivide.setOnClickListener(v -> textView.append("/"));
+        buttonAdd.setOnClickListener(v -> tvExpression.append("+"));
+        buttonSubtract.setOnClickListener(v -> tvExpression.append("-"));
+        buttonMultiply.setOnClickListener(v -> tvExpression.append("*"));
+        buttonDivide.setOnClickListener(v -> tvExpression.append("/"));
 
         buttonEquals.setOnClickListener(v -> {
-            String expression = textView.getText().toString();
+            String expression = tvExpression.getText().toString();
             try {
-                double result = eval(expression);
-                textView.setText(String.valueOf(result));
-            } catch (Exception e) {
-                textView.setText("Error");
+                Expression e = new ExpressionBuilder(expression).build();
+                double result = e.evaluate();
+                tvResult.setText(String.valueOf(result));
+            } catch (Exception ex) {
+                tvResult.setText("Error");
             }
         });
 
         buttonDelete.setOnClickListener(v -> {
-            String text = textView.getText().toString();
+            String text = tvExpression.getText().toString();
             if (!text.isEmpty()) {
-                textView.setText(text.substring(0, text.length() - 1));
+                tvExpression.setText(text.substring(0, text.length() - 1));
             }
         });
-    }
 
-    private double eval(final String str) {
-        return new Object() {
-            int pos = -1, ch;
-
-            void nextChar() {
-                ch = (++pos < str.length()) ? str.charAt(pos) : -1;
+        buttonClear.setOnClickListener(v -> {
+            String text = tvExpression.getText().toString();
+            if (!text.isEmpty()) {
+                tvExpression.setText(null);
+                tvResult.setText(null);
             }
-
-            boolean eat(int charToEat) {
-                while (ch == ' ') nextChar();
-                if (ch == charToEat) {
-                    nextChar();
-                    return true;
-                }
-                return false;
-            }
-
-            double parse() {
-                nextChar();
-                double x = parseExpression();
-                if (pos < str.length()) throw new RuntimeException("Unexpected: " + (char) ch);
-                return x;
-            }
-
-            double parseExpression() {
-                double x = parseTerm();
-                for (; ; ) {
-                    if (eat('+')) x += parseTerm(); // addition
-                    else if (eat('-')) x -= parseTerm(); // subtraction
-                    else return x;
-                }
-            }
-
-            double parseTerm() {
-                double x = parseFactor();
-                for (; ; ) {
-                    if (eat('*')) x *= parseFactor(); // multiplication
-                    else if (eat('/')) x /= parseFactor(); // division
-                    else return x;
-                }
-            }
-
-            double parseFactor() {
-                if (eat('+')) return parseFactor(); // unary plus
-                if (eat('-')) return -parseFactor(); // unary minus
-
-                double x;
-                int startPos = this.pos;
-                if (eat('(')) { // parentheses
-                    x = parseExpression();
-                    eat(')');
-                } else if ((ch >= '0' && ch <= '9') || ch == '.') { // numbers
-                    while ((ch >= '0' && ch <= '9') || ch == '.') nextChar();
-                    x = Double.parseDouble(str.substring(startPos, this.pos));
-                } else {
-                    throw new RuntimeException("Unexpected: " + (char) ch);
-                }
-
-                return x;
-            }
-        }.parse();
+        });
     }
 }
